@@ -1,0 +1,3 @@
+DEFAULT_MEDIA_PATH = /home/al/.local/src/repos/vk-backend/default.gif
+HOST = localhost
+PORT = 8800
