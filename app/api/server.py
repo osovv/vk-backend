@@ -1,5 +1,8 @@
 import argparse
 import threading
+import time
+
+import requests
 from werkzeug.exceptions import abort
 from flask import Flask, jsonify, request, send_file
 
@@ -78,3 +81,13 @@ if __name__ == '__main__':
         default_media_path=default_media_path
     )
     server.run_server()
+
+    # Section for debug
+    time.sleep(5)
+    protocol = "http"
+    route = 'screen/1'
+    response = requests.put(f"{protocol}://{server_host}:{server_port}/{route}",
+                            json={
+                                "url": "/home/al/.local/src/repos/vk-backend/kostya.jpeg"
+                            })
+    print(response.text)
