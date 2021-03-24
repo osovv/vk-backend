@@ -1,10 +1,10 @@
 import argparse
 import threading
-
 from werkzeug.exceptions import abort
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 
-from app.api.utils import config_parser
+from utils import config_parser
+
 
 class Server:
     def __init__(self, host, port, default_media_path):
@@ -15,8 +15,8 @@ class Server:
         self.app = Flask(__name__)
         self.app.add_url_rule('/', view_func=self.get_home)
         self.app.add_url_rule('/home', view_func=self.get_home)
-        self.app.add_url_rule('/get_screen_<number>', view_func=self.get_media_url)
-        self.app.add_url_rule('/update_screen_<number>', view_func=self.update_media_url, methods=['PUT'])
+        self.app.add_url_rule('/screen/<number>', view_func=self.get_media_url)
+        self.app.add_url_rule('/screen/<number>', view_func=self.update_media_url, methods=['PUT'])
         self.app.add_url_rule('/shutdown', view_func=self.shutdown)
 
         self.app.register_error_handler(404, self.page_not_found)
@@ -43,7 +43,11 @@ class Server:
     def get_media_url(self, number):
         number = int(number)
         if type(number) == int and 1 <= number <= 6:
-            return self.media_urls[number]
+            try:
+                return send_file(self.media_urls[number],
+                                 attachment_filename='python.jpg')
+            except Exception as e:
+                return str(e)
         else:
             abort(404, description='Screen number is int between 1 and 6.')
 
