@@ -1,3 +1,5 @@
-DEFAULT_MEDIA_PATH = /home/al/.local/src/repos/vk-backend/dance.webm
-HOST = 192.168.1.56
+DEFAULT_MEDIA_LOCATION = /home/al/.local/src/repos/vk-backend/jesus.jpg
+DEFAULT_MEDIA_TYPE = img
+DEFAULT_MEDIA_DURATION = 3
+HOST = 192.168.43.111
 PORT = 8800
