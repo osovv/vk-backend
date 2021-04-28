@@ -150,11 +150,17 @@ def update_playlist(screen_number: int):
         return e, 400
     # print(playlist)
     playlists[screen_number].clear()
+    playlist_iters.clear()
     playlists[screen_number] = playlist.__root__.copy()
     playlist_iters[screen_number] = iter(playlists[screen_number])
     return f'Successfully updated playlist for screen #{screen_number}', 200
 
 
+@app.route("/playlist/<int:screen_number>", methods=['GET'])
+def get_playlist(screen_number: int):
+    screen_number = verify_screen_number(screen_number)
+    pl = Playlist(__root__=playlists[screen_number])
+    return pl.json()
 @app.route('/refresh', methods=['GET'])
 def refresh_screens():
     socketio.emit('screen refresh', {"msg": "All screens should be refreshed", "screen_number": 0})
@@ -168,23 +174,28 @@ def refresh_screen(screen_number):
                   {"msg": f"Screen{screen_number} should be refreshed", "screen_number": screen_number})
     return f"Signal to update {screen_number} screen was sent", 200
 
+
 @app.route('/sids', methods=['GET'])
 def get_sids():
     return jsonify(screen_sids)
 
+
 @app.errorhandler(404)
 def page_not_found(error_description):
     return jsonify(error=str(error_description)), 404
+
 
 @socketio.on('message')
 def on_message(data):
     print("I received a message!")
     print(data)
 
+
 @socketio.on('my message')
 def on_my_message(data):
     print('I received a message!')
     print(data)
+
 
 @socketio.on('connect')
 def test_connect(sid=111):
@@ -192,9 +203,11 @@ def test_connect(sid=111):
     emit('my message', {'data': 'Connected'})
     print('Client connected:', sid)
 
+
 @socketio.on('disconnect')
 def test_disconnect(sid=111):
     print('Client disconnected:', sid)
+
 
 @socketio.on('screen refresh')
 def on_media_updated(data):
@@ -210,21 +223,22 @@ def on_media_updated(data):
         screens_info[screen]['type'] = new_type
     return 'ok', 200
 
+
 @socketio.on('screen number')
 def on_screen_number(data):
     screen_sids[data['screen']] = data['sid']
+
 
 @socketio.on('finished playing')
 def on_finish_playing(data):
     finished_event = FinishedEvent.parse_raw(data)
     screen_number = finished_event.screen_number
-    print(f"Screen #{screen_number} finished playing")
-    # print(playlists[screen_number])
     try:
         item = next(playlist_iters[screen_number])
         update_media_info(screen_number, custom_body=item.dict())
     except StopIteration as e:
         pass
+
 
 def verify_screen_number(screen_number: str):
     screen_number = int(screen_number)
@@ -232,6 +246,7 @@ def verify_screen_number(screen_number: str):
         return screen_number
     else:
         abort(404, description='Screen number is int between 1 and 6.')
+
 
 if __name__ == '__main__':
     socketio.run(app=app, host=server_host, port=server_port)
