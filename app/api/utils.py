@@ -43,7 +43,7 @@ class MediaInfo(BaseMedia):
 
     @validator('location')
     def location_exists(cls, v):
-        if not os.path.exists(v):
+2        if not os.path.exists(v):
             return ValueError('file does not exist')
         return v
 

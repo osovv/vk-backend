@@ -115,10 +115,9 @@ def update_media_info(screen_number, custom_body=None):
         media_info = ''
         try:
             media_info = MediaInfo(**request_body)
-            print(media_info)
+            # print(media_info)
         except ValidationError as e:
-            print(e)
-            return e, 400
+            return str(e), 400
         if media_info.location:
             screens_info[screen_number]['location'] = media_info.location
         if media_info.duration:
@@ -126,7 +125,10 @@ def update_media_info(screen_number, custom_body=None):
         if media_info.media_type:
             screens_info[screen_number]['media_type'] = media_info.media_type
     if custom_body:
-        media_info = MediaInfo(**custom_body)
+        try:
+            media_info = MediaInfo(**custom_body)
+        except ValidationError as e:
+            return str(e), 400
         if media_info.location:
             screens_info[screen_number]['location'] = media_info.location
         if media_info.duration:
@@ -159,8 +161,13 @@ def update_playlist(screen_number: int):
 @app.route("/playlist/<int:screen_number>", methods=['GET'])
 def get_playlist(screen_number: int):
     screen_number = verify_screen_number(screen_number)
-    pl = Playlist(__root__=playlists[screen_number])
-    return pl.json()
+    # return jsonify(playlists[screen_number])
+    try:
+        pl = Playlist(__root__=playlists[screen_number])
+        return pl.json()
+    except ValueError as e:
+        return e, 400
+
 @app.route('/refresh', methods=['GET'])
 def refresh_screens():
     socketio.emit('screen refresh', {"msg": "All screens should be refreshed", "screen_number": 0})
