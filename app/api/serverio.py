@@ -150,7 +150,7 @@ def update_playlist(screen_number: int):
         return e, 400
     # print(playlist)
     playlists[screen_number].clear()
-    playlist_iters.clear()
+    # playlist_iters[screen_number].clear()
     playlists[screen_number] = playlist.__root__.copy()
     playlist_iters[screen_number] = iter(playlists[screen_number])
     return f'Successfully updated playlist for screen #{screen_number}', 200
@@ -233,6 +233,8 @@ def on_screen_number(data):
 def on_finish_playing(data):
     finished_event = FinishedEvent.parse_raw(data)
     screen_number = finished_event.screen_number
+    print(playlist_iters.keys())
+    print(playlist_iters.values())
     try:
         item = next(playlist_iters[screen_number])
         update_media_info(screen_number, custom_body=item.dict())
