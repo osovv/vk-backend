@@ -1,4 +1,4 @@
-DEFAULT_MEDIA_LOCATION = /home/al/.local/src/repos/vk-backend/jesus.jpg
+DEFAULT_MEDIA_LOCATION = /home/al/.local/src/repos/vk-backend/media/logo.webp
 DEFAULT_MEDIA_TYPE = img
 DEFAULT_MEDIA_DURATION = 3
 HOST = 192.168.43.111

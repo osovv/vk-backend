@@ -29,6 +29,8 @@ screens_info = {i: {"location": default_media_location,
 screen_sids = {i: "" for i in range(1, 7)}
 playlists = {i: [] for i in range(1, 7)}
 playlist_iters = {i: iter([]) for i in range(1, 7)}
+
+
 # playlist = [
 #     {
 #         "location": "/home/al/.local/src/repos/vk-backend/jesus.jpg",
@@ -59,10 +61,18 @@ def index():
     return '''
     screen_number -- целое число от 1 до 6<br/>
         endpoints:<br/>
-            /screen_media/screen_number/file -- возвращает файл, который можно стримить в VLC<br/>
-            /screen_media/screen_number/type -- возвращает json вида {"media_type" : "some_media_type"},
-            где some_media_type -- это video, img или gif<br/>
-    '''
+            [GET] /screen/screen_number/file -- возвращает файл, который можно стримить в VLC<br/>
+            [GET] /screen/screen_number -- возвращает json вида {"media_type" : "some_media_type",
+                                                                "duration" : "some_duration",
+                                                                "url" : "some_url"},
+            где url - путь, по которому доступен файл для экрана screen_number <br/>
+            [PUT] /screen/screen_number -- принимает json вида {"media_type": "", "location" : "", "duration" : ""} и
+            обновляет данные для экрана, где some_media_type -- это vid, img или gif<br/>
+            [PUT] /playlist/screen_number -- принимает json список с предметами {"media_type": "", "location" : "",
+             "duration" : ""} <br/>
+            [GET] /refresh -- обновить все экраны <br/>
+            [GET] /refresh/screen_number -- обновить экран screen_number <br/>
+            '''
 
 
 @app.route("/screen/<int:screen_number>/file", methods=['GET'])
@@ -97,7 +107,7 @@ def get_screens():
     return jsonify(screens_info)
 
 
-@app.route('/screen_media/<int:screen_number>', methods=['PUT'])
+@app.route('/screen/<int:screen_number>', methods=['PUT'])
 def update_media_info(screen_number, custom_body=None):
     screen_number = verify_screen_number(screen_number)
     if request.json:
@@ -128,13 +138,14 @@ def update_media_info(screen_number, custom_body=None):
     return f'Successfully updated media path for screen {screen_number}', 200
 
 
-@app.route("/screen/<int:screen_number>/playlist", methods=['PUT'])
+@app.route("/playlist/<int:screen_number>", methods=['PUT'])
 def update_playlist(screen_number: int):
     playlist = []
     screen_number = verify_screen_number(screen_number)
     try:
-        print(request.json)
-        playlist = Playlist(__root__=request.json)
+        # print(request.json)
+        request_body = dict(request.json)
+        playlist = Playlist(__root__=request_body['items'])
     except ValidationError as e:
         return e, 400
     # print(playlist)
@@ -146,31 +157,34 @@ def update_playlist(screen_number: int):
 
 @app.route('/refresh', methods=['GET'])
 def refresh_screens():
-    socketio.emit('screen refresh', {'msg': 'All screens should be refreshed', 'screen_number': 0})
+    socketio.emit('screen refresh', {"msg": "All screens should be refreshed", "screen_number": 0})
     return 'Signal to update all screens was sent', 200
 
+
+@app.route('/refresh/<int:screen_number>', methods=['GET'])
+def refresh_screen(screen_number):
+    screen_number = verify_screen_number(screen_number)
+    socketio.emit('screen refresh',
+                  {"msg": f"Screen{screen_number} should be refreshed", "screen_number": screen_number})
+    return f"Signal to update {screen_number} screen was sent", 200
 
 @app.route('/sids', methods=['GET'])
 def get_sids():
     return jsonify(screen_sids)
 
-
 @app.errorhandler(404)
 def page_not_found(error_description):
     return jsonify(error=str(error_description)), 404
-
 
 @socketio.on('message')
 def on_message(data):
     print("I received a message!")
     print(data)
 
-
 @socketio.on('my message')
 def on_my_message(data):
     print('I received a message!')
     print(data)
-
 
 @socketio.on('connect')
 def test_connect(sid=111):
@@ -178,11 +192,9 @@ def test_connect(sid=111):
     emit('my message', {'data': 'Connected'})
     print('Client connected:', sid)
 
-
 @socketio.on('disconnect')
 def test_disconnect(sid=111):
     print('Client disconnected:', sid)
-
 
 @socketio.on('screen refresh')
 def on_media_updated(data):
@@ -198,11 +210,9 @@ def on_media_updated(data):
         screens_info[screen]['type'] = new_type
     return 'ok', 200
 
-
 @socketio.on('screen number')
 def on_screen_number(data):
     screen_sids[data['screen']] = data['sid']
-
 
 @socketio.on('finished playing')
 def on_finish_playing(data):
@@ -216,20 +226,12 @@ def on_finish_playing(data):
     except StopIteration as e:
         pass
 
-
-
-
-def emit_data_updated(json):
-    emit('data_updated', json, broadcast=True)
-
-
 def verify_screen_number(screen_number: str):
     screen_number = int(screen_number)
     if type(screen_number) == int and 1 <= screen_number <= 6:
         return screen_number
     else:
         abort(404, description='Screen number is int between 1 and 6.')
-
 
 if __name__ == '__main__':
     socketio.run(app=app, host=server_host, port=server_port)
