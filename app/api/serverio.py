@@ -149,7 +149,7 @@ def update_playlist(screen_number: int):
         request_body = dict(request.json)
         playlist = Playlist(__root__=request_body['items'])
     except ValidationError as e:
-        return e, 400
+        return str(e), 400
     # print(playlist)
     playlists[screen_number].clear()
     # playlist_iters[screen_number].clear()
@@ -166,7 +166,7 @@ def get_playlist(screen_number: int):
         pl = Playlist(__root__=playlists[screen_number])
         return pl.json()
     except ValueError as e:
-        return e, 400
+        return str(e), 400
 
 @app.route('/refresh', methods=['GET'])
 def refresh_screens():
