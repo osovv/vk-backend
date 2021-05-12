@@ -1,12 +1,12 @@
 import argparse
-import pathlib
+import socket
 
-from flask import Flask, render_template, jsonify, send_file, request
+from flask import Flask, jsonify, send_file, request
 from flask_socketio import SocketIO, emit
 from werkzeug.exceptions import abort
 from pydantic import ValidationError
 
-from app.api.utils import config_parser, ScreenInfo, MediaInfo, Playlist, FinishedEvent
+from api.utils import config_parser, ScreenInfo, MediaInfo, Playlist, FinishedEvent
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -14,7 +14,6 @@ socketio = SocketIO(app)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, dest='config')
-
 args = parser.parse_args()
 
 config = config_parser(args.config)
@@ -30,6 +29,10 @@ screen_sids = {i: "" for i in range(1, 7)}
 playlists = {i: [] for i in range(1, 7)}
 playlist_iters = {i: iter([]) for i in range(1, 7)}
 
+
+local_ip_address = socket.gethostbyname(socket.gethostname())
+if local_ip_address != server_host:
+    server_host = local_ip_address
 
 # playlist = [
 #     {
@@ -168,6 +171,7 @@ def get_playlist(screen_number: int):
     except ValueError as e:
         return str(e), 400
 
+
 @app.route('/refresh', methods=['GET'])
 def refresh_screens():
     socketio.emit('screen refresh', {"msg": "All screens should be refreshed", "screen_number": 0})
@@ -246,7 +250,7 @@ def on_finish_playing(data):
         item = next(playlist_iters[screen_number])
         update_media_info(screen_number, custom_body=item.dict())
     except StopIteration as e:
-        pass
+        playlist_iters[screen_number] = iter(playlists[screen_number])
 
 
 def verify_screen_number(screen_number: str):
