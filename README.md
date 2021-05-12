@@ -5,7 +5,7 @@
  ```
  ## Запуск
  ```
- python app/api/server.py --config app/api/config.txt
+ python api/server.py --config api/config.txt
  ```
 
 ## Использование
