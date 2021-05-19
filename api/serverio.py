@@ -174,6 +174,10 @@ def get_playlist(screen_number: int):
 
 @app.route('/refresh', methods=['GET'])
 def refresh_screens():
+    for i in range(1, 7):
+        playlist_iters[i] = iter(playlists[i])
+        item = next(playlist_iters[i])
+        update_media_info(i, custom_body=item.dict())
     socketio.emit('screen refresh', {"msg": "All screens should be refreshed", "screen_number": 0})
     return 'Signal to update all screens was sent', 200
 
@@ -181,6 +185,9 @@ def refresh_screens():
 @app.route('/refresh/<int:screen_number>', methods=['GET'])
 def refresh_screen(screen_number):
     screen_number = verify_screen_number(screen_number)
+    playlist_iters[screen_number] = iter(playlists[screen_number])
+    item = next(playlist_iters[screen_number])
+    update_media_info(screen_number, custom_body=item.dict())
     socketio.emit('screen refresh',
                   {"msg": f"Screen{screen_number} should be refreshed", "screen_number": screen_number})
     return f"Signal to update {screen_number} screen was sent", 200
